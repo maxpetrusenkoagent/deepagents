@@ -2576,7 +2576,7 @@ class DeepAgentsApp(App):
     ENABLE_COMMAND_PALETTE = True
     """Enable Textual's built-in command palette."""
 
-    COMMANDS = {
+    COMMANDS: ClassVar[set[Any]] = {  # type: ignore[reportIncompatibleVariableOverride]
         "deepagents_code.tui.command_palette:ModelProvider",
     }
     """Command palette providers for deepagents-code."""

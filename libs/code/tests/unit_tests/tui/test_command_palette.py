@@ -16,7 +16,7 @@ from deepagents_code.tui.command_palette import ModelProvider
 class CommandPaletteTestApp(App):
     """Test app for CommandPalette registration and functionality."""
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.switched_model: str | None = None
         self.current_spec: str | None = "openai:gpt-4"
@@ -42,7 +42,6 @@ class CommandPaletteTestApp(App):
 @pytest.mark.asyncio
 async def test_model_provider_logic() -> None:
     """Test that ModelProvider correctly discovers and searches models."""
-
     mock_available = {
         "anthropic": ["claude-3-sonnet", "claude-3-opus"],
         "openai": ["gpt-4"],
@@ -54,18 +53,24 @@ async def test_model_provider_logic() -> None:
     }
 
     # Patch model_config functions that ModelProvider calls.
-    with patch(
-        "deepagents_code.tui.command_palette.get_available_models",
-        return_value=mock_available,
-    ), patch(
-        "deepagents_code.tui.command_palette.get_model_profiles",
-        return_value=mock_profiles,
+    with (
+        patch(
+            "deepagents_code.tui.command_palette.get_available_models",
+            return_value=mock_available,
+        ),
+        patch(
+            "deepagents_code.tui.command_palette.get_model_profiles",
+            return_value=mock_profiles,
+        ),
     ):
         app = CommandPaletteTestApp()
         from textual.app import active_app
 
         active_app.set(app)
-        provider = ModelProvider(app)
+        # Provider requires a screen; we mock one that points to our test app.
+        mock_screen = MagicMock()
+        mock_screen.app = app
+        provider = ModelProvider(mock_screen)
 
         # Test discover()
         discovery_hits = [hit async for hit in provider.discover()]
@@ -85,11 +90,10 @@ async def test_model_provider_logic() -> None:
         assert all(isinstance(hit, Hit) for hit in search_hits)
 
         # Verify help text includes provider
-        assert any("anthropic" in hit.help.lower() for hit in search_hits)
+        assert any("anthropic" in (hit.help or "").lower() for hit in search_hits)
 
 
-@pytest.mark.asyncio
-async def test_command_palette_registration() -> None:
+def test_command_palette_registration() -> None:
     """Test that the command palette is enabled and provider is registered."""
     assert DeepAgentsApp.ENABLE_COMMAND_PALETTE is True
     assert "deepagents_code.tui.command_palette:ModelProvider" in DeepAgentsApp.COMMANDS

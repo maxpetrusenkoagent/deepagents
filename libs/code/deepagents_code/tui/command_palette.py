@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING, AsyncIterator, Mapping, cast
+from typing import TYPE_CHECKING
 
-from textual.command import DiscoveryHit, Hit, Hits, Provider
+from textual.command import DiscoveryHit, Hit, Provider
 
 from deepagents_code.model_config import (
     ModelProfileEntry,
@@ -16,13 +16,18 @@ from deepagents_code.model_config import (
 from deepagents_code.tui.widgets.model_selector import _RECOMMENDED_MODELS
 
 if TYPE_CHECKING:
-    from deepagents_code.app import DeepAgentsApp
+    from collections.abc import AsyncGenerator, Mapping
 
 
-def _get_display_name(model_spec: str, profiles: Mapping[str, ModelProfileEntry]) -> str:
+def _get_display_name(
+    model_spec: str, profiles: Mapping[str, ModelProfileEntry]
+) -> str:
     """Resolve the friendly display name for a model spec.
 
     Matches the logic in `ModelSelectorScreen._get_model_display_name`.
+
+    Returns:
+        The display name for the model.
     """
     entry = profiles.get(model_spec)
     if entry:
@@ -46,7 +51,7 @@ def _get_display_name(model_spec: str, profiles: Mapping[str, ModelProfileEntry]
 class ModelProvider(Provider):
     """A command palette provider for switching models."""
 
-    async def search(self, query: str) -> Hits:
+    async def search(self, query: str) -> AsyncGenerator[Hit, None]:
         """Search for models matching the query.
 
         Args:
@@ -88,7 +93,7 @@ class ModelProvider(Provider):
                         help=f"Switch to {display_name} ({provider})",
                     )
 
-    async def discover(self) -> Hits:
+    async def discover(self) -> AsyncGenerator[DiscoveryHit, None]:
         """Yield all models for discovery (empty query).
 
         Yields:
