@@ -96,4 +96,23 @@ async def test_model_provider_logic() -> None:
 def test_command_palette_registration() -> None:
     """Test that the command palette is enabled and provider is registered."""
     assert DeepAgentsApp.ENABLE_COMMAND_PALETTE is True
-    assert "deepagents_code.tui.command_palette:ModelProvider" in DeepAgentsApp.COMMANDS
+    # The provider is registered via a lazy-load function.
+    from deepagents_code.app import _get_model_provider
+
+    assert _get_model_provider in DeepAgentsApp.COMMANDS
+
+
+@pytest.mark.asyncio
+async def test_command_palette_interaction() -> None:
+    """Test that the command palette opens and doesn't crash with our provider."""
+    # We use DeepAgentsApp directly to test the real COMMANDS registration.
+    app = DeepAgentsApp()
+    async with app.run_test() as pilot:
+        # Open the command palette.
+        await pilot.press("ctrl+p")
+        # Ensure it's open (it should have a CommandPalette screen).
+        from textual.command import CommandPalette
+
+        assert any(isinstance(screen, CommandPalette) for screen in app.screen_stack)
+        # Close it.
+        await pilot.press("escape")

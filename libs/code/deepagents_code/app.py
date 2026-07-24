@@ -582,6 +582,7 @@ if TYPE_CHECKING:
     from langchain_core.runnables import RunnableConfig
     from langgraph.pregel import Pregel
     from textual.app import ComposeResult
+    from textual.command import Provider
     from textual.events import MouseUp, Paste, Resize
     from textual.geometry import Size
     from textual.layout import DockArrangeResult
@@ -2564,6 +2565,17 @@ class _GoalGradeObservation:
     """Correlation ID minted by `RubricMiddleware` for the observed grade."""
 
 
+def _get_model_provider() -> type[Provider]:
+    """Lazy-load the ModelProvider to avoid circular imports.
+
+    Returns:
+        The ModelProvider class.
+    """
+    from deepagents_code.tui.command_palette import ModelProvider
+
+    return ModelProvider
+
+
 class DeepAgentsApp(App):
     """Main Textual application for deepagents-code."""
 
@@ -2576,8 +2588,8 @@ class DeepAgentsApp(App):
     ENABLE_COMMAND_PALETTE = True
     """Enable Textual's built-in command palette."""
 
-    COMMANDS: ClassVar[set[Any]] = {  # type: ignore[reportIncompatibleVariableOverride]
-        "deepagents_code.tui.command_palette:ModelProvider",
+    COMMANDS: ClassVar[set[type[Provider] | Callable[[], type[Provider]]]] = {
+        _get_model_provider,
     }
     """Command palette providers for deepagents-code."""
 
